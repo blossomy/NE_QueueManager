@@ -8,22 +8,55 @@ using namespace std;
 
 int main()
 {
-    /*
-    QueueManager manager;
-
-    short int queueID = manager.CreateQueue();
-
-    manager.Enqueue(queueID, 'a');
-    manager.Enqueue(queueID, 'b');
-
-    std::cout << manager.Dequeue(queueID) << std::endl; // Outputs 'a'
-    std::cout << manager.Dequeue(queueID) << std::endl; // Outputs 'b'
-    */
     QueueManager manager;
     char c;
 
+    short int q0 = manager.CreateQueue();
+
     short int q1 = manager.CreateQueue();
     
+    for (int j = 0; j < 4; j++)
+    {
+        for (int i = 0; i < 24; i++)
+        {
+            char a = 'a' + i;
+            manager.Enqueue(q1, a);
+        }
+    }
+
+    manager.Enqueue(q1, 'y');
+    manager.Enqueue(q1, 'z');
+
+    for (int i = 0; i < 96; i++)
+    {
+        //std::cout << "Dequeued: " << manager.Dequeue(q1) << std::endl;
+        manager.Dequeue(q1);
+    }
+
+    for (int i = 0; i < 90; i++)
+    {
+        char a = 'A' + i % 24;
+        manager.Enqueue(q1, a);
+    }
+
+    manager.Dequeue(q1);
+    manager.Dequeue(q1);
+    manager.Dequeue(q1);
+    manager.Dequeue(q1);
+
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    manager.Enqueue(q1, 'z');
+    
+    /*
     manager.Enqueue(q1, 'a');
     manager.Enqueue(q1, 'b');
     
@@ -33,6 +66,14 @@ int main()
     std::cout << "Dequeued: " << c << std::endl;
 
     short int q2 = manager.CreateQueue();
+    manager.Enqueue(q2, 'a');
+    manager.Enqueue(q2, 'b');
+
+    c = manager.Dequeue(q2);
+    std::cout << "Dequeued: " << c << std::endl;
+    c = manager.Dequeue(q2);
+    std::cout << "Dequeued: " << c << std::endl;
+    */
 
 }
 

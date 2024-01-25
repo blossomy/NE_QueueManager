@@ -22,6 +22,8 @@ public:
             buf[headerIndex + 2] = -1; // start (데이터 시작 위치)
             buf[headerIndex + 3] = -1; // end (데이터 끝 위치)
         }
+
+        pc = buf;
     }
 
     ~QueueManager() {}
@@ -32,8 +34,10 @@ public:
             if (buf[headerIndex] == 0) { // 비활성 큐 찾기
                 buf[headerIndex] = 1; // 활성화
                 buf[headerIndex + 1] = 0; // size 초기화
-                buf[headerIndex + 2] = 80 + i; // 데이터 시작 위치 (예제: 큐당 10바이트)
-                buf[headerIndex + 3] = 80 + i; // 데이터 끝 위치
+                //buf[headerIndex + 2] = 80 + i; // 데이터 시작 위치 (예제: 큐당 10바이트)
+                //buf[headerIndex + 3] = 80 + i; // 데이터 끝 위치
+                buf[headerIndex + 2] = 0; // 데이터 시작 위치
+                buf[headerIndex + 3] = 0; // 데이터 끝 위치
                 return i;
             }
         }
@@ -64,6 +68,29 @@ public:
 
         // 데이터 추가 로직
         // ...
+        
+        // 현재 큐의 크기와 데이터 시작 위치 가져오기
+        char& size = buf[headerIndex + 1];
+        char start = buf[headerIndex + 2];
+        char end = buf[headerIndex + 3];
+        //unsigned int end = buf[headerIndex + 3] + 80 + (queueID * QUEUE_BUFFER_SIZE);
+
+        // 큐가 가득 찼는지 확인 (예: 각 큐에 10바이트 할당)
+        if (size >= QUEUE_BUFFER_SIZE) {
+            OnError(); // 큐 오버플로우
+            return false;
+        }
+
+        // 데이터 추가
+        unsigned int index = end + 80 + (queueID * QUEUE_BUFFER_SIZE);
+        buf[index] = value;
+        //buf[end] = value;
+        //end = (end + 1) % 2048; // 버퍼의 끝에 도달하면 처음으로 돌아감
+        end = (end + 1) % QUEUE_BUFFER_SIZE; // 98
+        size++;
+
+        // 메타데이터 업데이트
+        buf[headerIndex + 3] = end;
 
         return true;
     }
@@ -82,7 +109,27 @@ public:
         // 데이터 제거 로직
         // ...
 
-        return ' '; // 반환할 데이터
+        // 현재 큐의 크기와 데이터 시작 위치 가져오기
+        char& size = buf[headerIndex + 1];
+        char& start = buf[headerIndex + 2];
+        //unsigned int start = buf[headerIndex + 2] + 80 + (queueID * QUEUE_BUFFER_SIZE);
+
+        // 큐가 비어있는지 확인
+        if (size == 0) {
+            OnError(); // 빈 큐
+            return -1;
+        }
+
+        // 데이터 제거
+        unsigned int index = start + 80 + (queueID * QUEUE_BUFFER_SIZE);
+        char value = buf[index]; // 제거할 값
+        buf[index] = 0;
+        //char value = buf[start]; // 제거할 값
+        //start = (start + 1) % 2048; // 버퍼의 끝에 도달하면 처음으로 돌아감
+        start = (start + 1) % QUEUE_BUFFER_SIZE; // 버퍼의 끝에 도달하면 처음으로 돌아감
+        size--;
+
+        return value;
     }
 
     void OnError() {
@@ -91,4 +138,5 @@ public:
 
 private:
     char buf[2048]; // 첫 80바이트는 메타데이터, 나머지는 데이터 저장
+    char* pc;
 };
