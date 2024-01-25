@@ -23,7 +23,7 @@ public:
             buf[headerIndex + 3] = -1; // end (데이터 끝 위치)
         }
 
-        pc = buf;
+        pc = &buf[80];
     }
 
     ~QueueManager() {}
@@ -82,8 +82,10 @@ public:
         }
 
         // 데이터 추가
-        unsigned int index = end + 80 + (queueID * QUEUE_BUFFER_SIZE);
-        buf[index] = value;
+        //unsigned int index = end + 80 + (queueID * QUEUE_BUFFER_SIZE);
+        //buf[index] = value;
+        char* data = pc + end + (queueID * QUEUE_BUFFER_SIZE);
+        *data = value;
         //buf[end] = value;
         //end = (end + 1) % 2048; // 버퍼의 끝에 도달하면 처음으로 돌아감
         end = (end + 1) % QUEUE_BUFFER_SIZE; // 98
@@ -122,8 +124,12 @@ public:
 
         // 데이터 제거
         unsigned int index = start + 80 + (queueID * QUEUE_BUFFER_SIZE);
-        char value = buf[index]; // 제거할 값
-        buf[index] = 0;
+        char* data = pc + start + (queueID * QUEUE_BUFFER_SIZE);
+        char value = *(data);
+        *data = 0;
+        //char value = buf[index]; // 제거할 값
+        //buf[index] = 0;
+
         //char value = buf[start]; // 제거할 값
         //start = (start + 1) % 2048; // 버퍼의 끝에 도달하면 처음으로 돌아감
         start = (start + 1) % QUEUE_BUFFER_SIZE; // 버퍼의 끝에 도달하면 처음으로 돌아감
