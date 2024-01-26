@@ -5,6 +5,9 @@
 #include "QueueManager.h"
 
 using namespace std;
+//using namespace StaticSizeQueue;
+//using namespace MemCopyQueue;
+using namespace DoubleLinkedListQueue;
 
 int main()
 {
@@ -13,16 +16,21 @@ int main()
 
     short int q0 = manager.CreateQueue();
 
+    for (int i = 0; i < 4; i++)
+    {
+        char a = 'a' + i % 24;
+        manager.Enqueue(q0, a);
+    }
+
     short int q1 = manager.CreateQueue();
     
-    for (int j = 0; j < 4; j++)
+    for (int i = 0; i < 4; i++)
     {
-        for (int i = 0; i < 24; i++)
-        {
-            char a = 'a' + i;
-            manager.Enqueue(q1, a);
-        }
+        char a = 'a' + i % 24;
+        manager.Enqueue(q1, a);
     }
+
+    return 0;
 
     manager.Enqueue(q1, 'y');
     manager.Enqueue(q1, 'z');
@@ -75,6 +83,7 @@ int main()
     std::cout << "Dequeued: " << c << std::endl;
     */
 
+    return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
