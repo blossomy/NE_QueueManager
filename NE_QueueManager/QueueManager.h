@@ -192,8 +192,37 @@ namespace DoubleLinkedListQueue
             unsigned short index = GetUShortFromBuf(headerIndex);
             char value = buf[index];
 
+            //unsigned int newIndex = GetUShortFromBuf(index + 3); // next 인덱스
+            //
+            //if (newIndex == 0)
+            //{
+            //    SetUShortToBuf(headerIndex, 1); // 새로운 Start 인덱스 기본 1 저장
+            //    SetUShortToBuf(headerIndex + 2, newIndex); // 새로운 End 인덱스 저장
+            //}
+            //else
+            //{
+            //    SetUShortToBuf(headerIndex, newIndex); // 새로운 Start 인덱스 저장
+            //    //SetUShortToBuf(newIndex + 1, 0); // Start 노드의 prev = 0
+            //}
+
+            // 마지막 노드 인덱스
+            unsigned int endIndex = GetRightMostNodeIndex();
+            // 마지막 노드의 prev 노드 인덱스
+            unsigned int prevIndex = GetUShortFromBuf(endIndex + 1);
+            // 마지막 노드 next 노드의 prev 변경
+            unsigned int nextIndex = GetUShortFromBuf(endIndex + 3);
+            if (nextIndex != 0)
+            {
+                SetUShortToBuf(nextIndex + 1, index);
+            }
+
+            if (prevIndex != 0 && prevIndex != index)
+            {
+                // prev 노드의 next를 디큐된 인덱스로 설정
+                SetUShortToBuf(prevIndex + 3, index);
+            }
+
             unsigned int newIndex = GetUShortFromBuf(index + 3); // next 인덱스
-            
             if (newIndex == 0)
             {
                 SetUShortToBuf(headerIndex, 1); // 새로운 Start 인덱스 기본 1 저장
@@ -201,23 +230,9 @@ namespace DoubleLinkedListQueue
             }
             else
             {
-                SetUShortToBuf(headerIndex, newIndex); // 새로운 Start 인덱스 저장
-                //SetUShortToBuf(newIndex + 1, 0); // Start 노드의 prev = 0
-            }
+                if (newIndex != endIndex)
+                    SetUShortToBuf(headerIndex, newIndex); // 새로운 Start 인덱스 저장
 
-            // 마지막 노드 인덱스
-            unsigned int endIndex = GetRightMostNodeIndex();
-            // 마지막 노드의 prev 노드 인덱스
-            unsigned int prevIndex = GetUShortFromBuf(endIndex + 1);
-
-            if (prevIndex != 0)
-            {
-                // prev 노드의 next를 디큐된 인덱스로 설정
-                SetUShortToBuf(prevIndex + 3, index);
-            }
-
-            if (newIndex != 0)
-            {
                 SetUShortToBuf(newIndex + 1, 0); // Start 노드의 prev = 0
             }
 

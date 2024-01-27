@@ -14,40 +14,41 @@ int main()
     QueueManager manager;
     short int q[20];
     
-    {
-        q[0] = manager.CreateQueue();
-        q[1] = manager.CreateQueue();
-        q[2] = manager.CreateQueue();
-        
-        for (int i = 0; i < 4; i++)
-        {
-            char a = 'a' + i % 26;
-            manager.Enqueue(q[0], a);
-        }
+    //{
+    //    q[0] = manager.CreateQueue();
+    //    q[1] = manager.CreateQueue();
+    //    q[2] = manager.CreateQueue();
+    //    
+    //    for (int i = 0; i < 4; i++)
+    //    {
+    //        char a = 'a' + i % 26;
+    //        manager.Enqueue(q[0], a);
+    //    }
 
-        for (int i = 0; i < 4; i++)
-        {
-            char a = 'h' + i % 26;
-            manager.Enqueue(q[1], a);
-        }
+    //    for (int i = 0; i < 4; i++)
+    //    {
+    //        char a = 'h' + i % 26;
+    //        manager.Enqueue(q[1], a);
+    //    }
 
-        for (int i = 0; i < 4; i++)
-        {
-            char a = 'w' + i % 26;
-            manager.Enqueue(q[2], a);
-        }
-        manager.PrintAllQueueData();
+    //    for (int i = 0; i < 4; i++)
+    //    {
+    //        char a = 'w' + i % 26;
+    //        manager.Enqueue(q[2], a);
+    //    }
+    //    manager.PrintAllQueueData();
 
-        for (int i = 0; i < 4; i++)
-        {
-            manager.Dequeue(q[0]);
-            manager.Dequeue(q[1]);
-            manager.Dequeue(q[2]);
-            manager.PrintAllQueueData();
-        }
 
-        return 0;
-    }
+    //    for (int i = 0; i < 4; i++)
+    //    {
+    //        manager.Dequeue(q[0]);
+    //        manager.Dequeue(q[1]);
+    //        manager.Dequeue(q[2]);
+    //        manager.PrintAllQueueData();
+    //    }
+
+    //    return 0;
+    //}
 
     {
         q[0] = manager.CreateQueue();
