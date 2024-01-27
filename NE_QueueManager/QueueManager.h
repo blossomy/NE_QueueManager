@@ -20,20 +20,20 @@ namespace DoubleLinkedListQueue
     class QueueManager
     {
     public:
-#pragma pack(push, 1)
-        struct Node
-        {
-            char data;
-            unsigned short prevIndex;
-            unsigned short nextIn;
-        };
-
-        struct QueueInfo
-        {
-            unsigned short start;
-            
-        };
-#pragma pack(pop)
+//#pragma pack(push, 1)
+//        struct Node
+//        {
+//            char data;
+//            unsigned short prevIndex;
+//            unsigned short nextIn;
+//        };
+//
+//        struct QueueInfo
+//        {
+//            unsigned short start;
+//            
+//        };
+//#pragma pack(pop)
 
         void SetUShortToBuf(unsigned int index, unsigned short value) {
             // unsigned short 값을 두 개의 바이트로 나눕니다.
@@ -51,11 +51,11 @@ namespace DoubleLinkedListQueue
             return value;
         }
 
-        void SetEndNodeIndex(unsigned int index)
+        void SetRightMostNodeIndex(unsigned int index)
         {
             SetUShortToBuf(80, index);
         }
-        unsigned short GetEndNodeIndex()
+        unsigned short GetRightMostNodeIndex()
         {
             return GetUShortFromBuf(80);
         }
@@ -76,7 +76,7 @@ namespace DoubleLinkedListQueue
                 int headerIndex = i * 4; // 각 큐에 4바이트 할당 (isActive, size, start, end)
             }
 
-            SetEndNodeIndex(0);
+            SetRightMostNodeIndex(0);
             SetTotalNodeCount(0);
 
             pc = &buf[84];
@@ -104,6 +104,17 @@ namespace DoubleLinkedListQueue
                 OnError(); // 잘못된 큐 ID
                 return false;
             }
+
+            // 모든 노드 리스트 지워야함
+            //
+            //
+            //while (Dequeue(queueID) >= 0)
+            //    ;
+            while (GetUShortFromBuf(queueID * 4) >= 84)
+            {
+                Dequeue(queueID);
+            }
+
             int headerIndex = queueID * 4;
             //buf[headerIndex] = 0; // 비활성화
             SetUShortToBuf(headerIndex, 0);
@@ -130,7 +141,7 @@ namespace DoubleLinkedListQueue
             }
 
             unsigned short prevIndex = GetUShortFromBuf(headerIndex + 2);
-            unsigned short index = GetEndNodeIndex();
+            unsigned short index = GetRightMostNodeIndex();
             
             index = index < 84 ? 84 : index + 5;
             bool firstElement = false;
@@ -155,7 +166,7 @@ namespace DoubleLinkedListQueue
 
             SetUShortToBuf(headerIndex + 2, index); // 큐의 마지막 데이터 위치
 
-            SetEndNodeIndex(index); // 전체 모든 큐 마지막 데이터 위치
+            SetRightMostNodeIndex(index); // 전체 모든 큐 마지막 데이터 위치
             SetTotalNodeCount(GetTotalNodeCount() + 1); // 전체 데이터 갯수 증가
 
             return true;
@@ -166,19 +177,120 @@ namespace DoubleLinkedListQueue
                 OnError(); // 잘못된 큐 ID
                 return -1;
             }
+            //int headerIndex = queueID * 4;
+            //if (buf[headerIndex] == 0) {
+            //    OnError(); // 비활성 큐
+            //    return -1;
+            //}
             int headerIndex = queueID * 4;
-            if (buf[headerIndex] == 0) {
-                OnError(); // 비활성 큐
+            if (GetUShortFromBuf(headerIndex) < 84)
+            {
+                OnError();
                 return -1;
             }
 
+            unsigned short index = GetUShortFromBuf(headerIndex);
+            char value = buf[index];
 
+            unsigned int newIndex = GetUShortFromBuf(index + 3); // next 인덱스
+            
+            if (newIndex == 0)
+            {
+                SetUShortToBuf(headerIndex, 1); // 새로운 Start 인덱스 기본 1 저장
+                SetUShortToBuf(headerIndex + 2, newIndex); // 새로운 End 인덱스 저장
+            }
+            else
+            {
+                SetUShortToBuf(headerIndex, newIndex); // 새로운 Start 인덱스 저장
+                //SetUShortToBuf(newIndex + 1, 0); // Start 노드의 prev = 0
+            }
 
-            return 0;
+            // 마지막 노드 인덱스
+            unsigned int endIndex = GetRightMostNodeIndex();
+            // 마지막 노드의 prev 노드 인덱스
+            unsigned int prevIndex = GetUShortFromBuf(endIndex + 1);
+
+            if (prevIndex != 0)
+            {
+                // prev 노드의 next를 디큐된 인덱스로 설정
+                SetUShortToBuf(prevIndex + 3, index);
+            }
+
+            if (newIndex != 0)
+            {
+                SetUShortToBuf(newIndex + 1, 0); // Start 노드의 prev = 0
+            }
+
+            // 마지막 노드를 디큐된 노드에 복사
+            memmove(&buf[index], &buf[endIndex], 5);
+            // 마지막 노드 지우기
+            memset(&buf[endIndex], 0, 5);
+
+            // 이동된 마지막 노드가 어떤 큐의 Start또는 End index인 경우 처리
+            for (int i = 0; i < 20; i++)
+            {
+                bool updated = false;
+                unsigned int queueIndex = i * 4;
+                
+                if (GetUShortFromBuf(queueIndex) == 0)
+                    continue;
+
+                if (GetUShortFromBuf(queueIndex) == endIndex)
+                {
+                    SetUShortToBuf(queueIndex, index);
+                    updated = true;
+                }
+                if (GetUShortFromBuf(queueIndex + 2) == endIndex)
+                {
+                    SetUShortToBuf(queueIndex + 2, index);
+                    updated = true;
+                }
+
+                if (updated)
+                    break;
+            }
+
+            unsigned short leftShiftIndex = GetRightMostNodeIndex() - 5;
+            leftShiftIndex = leftShiftIndex < 84 ? 0 : leftShiftIndex;
+            SetRightMostNodeIndex(leftShiftIndex); // 전체 모든 큐 마지막 데이터 위치
+            //SetRightMostNodeIndex(GetRightModeNodeIndex() - 5); // 전체 모든 큐 마지막 데이터 위치
+            SetTotalNodeCount(GetTotalNodeCount() - 1); // 전체 데이터 갯수 감소
+
+            return value;
         }
 
         void OnError() {
             std::cerr << "Queue error occurred" << std::endl;
+        }
+
+        void PrintQueueData(short int queueID)
+        {
+            int index = queueID * 4;
+            int startIndex = GetUShortFromBuf(index);
+
+            cout << "Queue_" << queueID << ":";
+
+            while (startIndex >= 84)
+            {
+                cout << buf[startIndex] << ",";
+                startIndex = GetUShortFromBuf(startIndex + 3);
+            }
+
+            cout << endl;
+        }
+
+        void PrintAllQueueData()
+        {
+            cout << "<<< All Queues " << endl;
+            for (int i = 0; i < 20; i++)
+            {
+                int startIndex = GetUShortFromBuf(i * 4);
+                if (startIndex == 0)
+                    continue;
+
+                PrintQueueData(i);
+            }
+            cout << ">>>" << endl;
         }
 
     private:

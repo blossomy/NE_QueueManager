@@ -12,76 +12,118 @@ using namespace DoubleLinkedListQueue;
 int main()
 {
     QueueManager manager;
-    char c;
-
-    short int q0 = manager.CreateQueue();
-
-    for (int i = 0; i < 4; i++)
-    {
-        char a = 'a' + i % 24;
-        manager.Enqueue(q0, a);
-    }
-
-    short int q1 = manager.CreateQueue();
+    short int q[20];
     
-    for (int i = 0; i < 4; i++)
     {
-        char a = 'a' + i % 24;
-        manager.Enqueue(q1, a);
+        q[0] = manager.CreateQueue();
+        q[1] = manager.CreateQueue();
+        q[2] = manager.CreateQueue();
+        
+        for (int i = 0; i < 4; i++)
+        {
+            char a = 'a' + i % 26;
+            manager.Enqueue(q[0], a);
+        }
+
+        for (int i = 0; i < 4; i++)
+        {
+            char a = 'h' + i % 26;
+            manager.Enqueue(q[1], a);
+        }
+
+        for (int i = 0; i < 4; i++)
+        {
+            char a = 'w' + i % 26;
+            manager.Enqueue(q[2], a);
+        }
+        manager.PrintAllQueueData();
+
+        for (int i = 0; i < 4; i++)
+        {
+            manager.Dequeue(q[0]);
+            manager.Dequeue(q[1]);
+            manager.Dequeue(q[2]);
+            manager.PrintAllQueueData();
+        }
+
+        return 0;
     }
 
-    return 0;
-
-    manager.Enqueue(q1, 'y');
-    manager.Enqueue(q1, 'z');
-
-    for (int i = 0; i < 96; i++)
     {
-        //std::cout << "Dequeued: " << manager.Dequeue(q1) << std::endl;
-        manager.Dequeue(q1);
+        q[0] = manager.CreateQueue();
+
+        for (int i = 0; i < 4; i++)
+        {
+            char a = 'a' + i % 26;
+            manager.Enqueue(q[0], a);
+        }
+
+        manager.PrintAllQueueData();
     }
 
-    for (int i = 0; i < 90; i++)
     {
-        char a = 'A' + i % 24;
-        manager.Enqueue(q1, a);
+        manager.DestroyQueue(q[0]);
+        manager.PrintAllQueueData();
     }
 
-    manager.Dequeue(q1);
-    manager.Dequeue(q1);
-    manager.Dequeue(q1);
-    manager.Dequeue(q1);
+    {
+        q[0] = manager.CreateQueue();
 
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    manager.Enqueue(q1, 'z');
-    
-    /*
-    manager.Enqueue(q1, 'a');
-    manager.Enqueue(q1, 'b');
-    
-    c = manager.Dequeue(q1);
-    std::cout << "Dequeued: " << c << std::endl;
-    c = manager.Dequeue(q1);
-    std::cout << "Dequeued: " << c << std::endl;
+        for (int i = 0; i < 14; i++)
+        {
+            char a = 'a' + i % 26;
+            manager.Enqueue(q[0], a);
+        }
+        manager.PrintAllQueueData();
+    }
 
-    short int q2 = manager.CreateQueue();
-    manager.Enqueue(q2, 'a');
-    manager.Enqueue(q2, 'b');
+    {
+        q[1] = manager.CreateQueue();
+        for (int i = 0; i < 4; i++)
+        {
+            char a = 'A' + i % 26;
+            manager.Enqueue(q[1], a);
+        }
+        manager.PrintAllQueueData();
+    }
 
-    c = manager.Dequeue(q2);
-    std::cout << "Dequeued: " << c << std::endl;
-    c = manager.Dequeue(q2);
-    std::cout << "Dequeued: " << c << std::endl;
-    */
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            char a = 'a' + i % 26;
+            manager.Enqueue(q[0], a);
+        }
+        manager.PrintAllQueueData();
+    }
+
+    {
+        q[2] = manager.CreateQueue();
+        for (int i = 0; i < 8; i++)
+        {
+            char a = 'a' + i % 26;
+            manager.Enqueue(q[2], a);
+        }
+        manager.PrintAllQueueData();
+    }
+
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            manager.Dequeue(q[0]);
+            manager.Dequeue(q[1]);
+            manager.Dequeue(q[2]);
+            manager.PrintAllQueueData();
+        }
+
+        //for (int i = 0; i < 4; i++)
+        //    manager.Dequeue(q[0]);
+        //for (int i = 0; i < 4; i++)
+        //    manager.Dequeue(q[1]);
+        //for (int i = 0; i < 4; i++)
+        //    manager.Dequeue(q[2]);
+
+        //manager.PrintAllQueueData();
+    }
 
     return 0;
 }
