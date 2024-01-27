@@ -35,13 +35,27 @@ namespace DoubleLinkedListQueue
 //        };
 //#pragma pack(pop)
 
+        // 특정 인덱스부터 2바이트를 써서 unsigned short를 넣어줌
         void SetUShortToBuf(unsigned int index, unsigned short value) {
+            if (index < 0 || index > 2048 - sizeof(unsigned short))
+            {
+                OnError();
+                return;
+            }
+
             // unsigned short 값을 두 개의 바이트로 나눕니다.
             buf[index] = value & 0xFF;         // 하위 바이트
             buf[index + 1] = (value >> 8) & 0xFF; // 상위 바이트
         }
 
+        // 특정 인덱스부터 2바이트를 써서 unsigned short를 가져옴
         unsigned short GetUShortFromBuf(unsigned int index) {
+            if (index < 0 || index > 2048 - sizeof(unsigned short))
+            {
+                OnError();
+                return 0;
+            }
+
             unsigned short value = 0;
 
             // 상위 바이트와 하위 바이트를 조합하여 unsigned short 값을 복원합니다.
@@ -51,6 +65,30 @@ namespace DoubleLinkedListQueue
             return value;
         }
 
+        
+        // 버퍼의 처음 84바이트(인덱스 0~83)를 큐관리를 위한 헤더로 사용함
+        
+        // 큐 하나당 처음 2바이트는 큐의 시작 인덱스
+        void SetQueueStartIndex(unsigned short queueID, unsigned short index)
+        {
+            SetUShortToBuf(queueID * 4, index);
+        }
+        unsigned short GetQueueStartIndex(unsigned short queueID)
+        {
+            return GetUShortFromBuf(queueID * 4);
+        }
+
+        // 다음 2바이트는 큐의 끝 인덱스
+        void SetQueueEndIndex(unsigned short queueID, unsigned short index)
+        {
+            SetUShortToBuf(queueID * 4 + 2, index);
+        }
+        unsigned short GetQueueEndIndex(unsigned short queueID)
+        {
+            return GetUShortFromBuf(queueID * 4 + 2);
+        }
+
+        // 각 큐당 2+2 바이트씩 20개를 사용하고 인덱스 80에 전체 버퍼의 가장 오른쪽에 있는 노드 인덱스를 저장함
         void SetRightMostNodeIndex(unsigned int index)
         {
             SetUShortToBuf(80, index);
@@ -59,6 +97,8 @@ namespace DoubleLinkedListQueue
         {
             return GetUShortFromBuf(80);
         }
+
+        // 인덱스 82에 전체 노드의 갯수를 저장함
         void SetTotalNodeCount(unsigned int index)
         {
             SetUShortToBuf(82, index);
@@ -68,7 +108,7 @@ namespace DoubleLinkedListQueue
             return GetUShortFromBuf(82);
         }
 
-
+////////////////////////////////////////////////////////////////////////////////////////
         
         QueueManager() {
             // 모든 큐 초기화
@@ -88,10 +128,17 @@ namespace DoubleLinkedListQueue
             for (short int i = 0; i < 20; ++i) {
                 int headerIndex = i * 4;
 
-                if (GetUShortFromBuf(headerIndex) == 0)
+                //if (GetUShortFromBuf(headerIndex) == 0)
+                //{
+                //    SetUShortToBuf(headerIndex, 1); // 각 큐의 첫번째 데이터
+                //    SetUShortToBuf(headerIndex + 2, 0); // 각 큐의 마지막 데이터
+                //    return i;
+                //}
+
+                if (GetQueueStartIndex(i) == 0)
                 {
-                    SetUShortToBuf(headerIndex, 1); // 각 큐의 첫번째 데이터
-                    SetUShortToBuf(headerIndex + 2, 0); // 각 큐의 마지막 데이터
+                    SetQueueStartIndex(i, 1); // 0보다 크면 큐가 사용중
+                    SetQueueEndIndex(i, 0);
                     return i;
                 }
             }
@@ -106,18 +153,12 @@ namespace DoubleLinkedListQueue
             }
 
             // 모든 노드 리스트 지워야함
-            //
-            //
-            //while (Dequeue(queueID) >= 0)
-            //    ;
-            while (GetUShortFromBuf(queueID * 4) >= 84)
+            while (GetQueueStartIndex(queueID) >= 84)
             {
                 Dequeue(queueID);
             }
 
-            int headerIndex = queueID * 4;
-            //buf[headerIndex] = 0; // 비활성화
-            SetUShortToBuf(headerIndex, 0);
+            SetQueueStartIndex(queueID, 0);
 
             return true;
         }
@@ -177,11 +218,7 @@ namespace DoubleLinkedListQueue
                 OnError(); // 잘못된 큐 ID
                 return -1;
             }
-            //int headerIndex = queueID * 4;
-            //if (buf[headerIndex] == 0) {
-            //    OnError(); // 비활성 큐
-            //    return -1;
-            //}
+
             int headerIndex = queueID * 4;
             if (GetUShortFromBuf(headerIndex) < 84)
             {
@@ -191,19 +228,6 @@ namespace DoubleLinkedListQueue
 
             unsigned short index = GetUShortFromBuf(headerIndex);
             char value = buf[index];
-
-            //unsigned int newIndex = GetUShortFromBuf(index + 3); // next 인덱스
-            //
-            //if (newIndex == 0)
-            //{
-            //    SetUShortToBuf(headerIndex, 1); // 새로운 Start 인덱스 기본 1 저장
-            //    SetUShortToBuf(headerIndex + 2, newIndex); // 새로운 End 인덱스 저장
-            //}
-            //else
-            //{
-            //    SetUShortToBuf(headerIndex, newIndex); // 새로운 Start 인덱스 저장
-            //    //SetUShortToBuf(newIndex + 1, 0); // Start 노드의 prev = 0
-            //}
 
             // 마지막 노드 인덱스
             unsigned int endIndex = GetRightMostNodeIndex();
@@ -268,7 +292,6 @@ namespace DoubleLinkedListQueue
             unsigned short leftShiftIndex = GetRightMostNodeIndex() - 5;
             leftShiftIndex = leftShiftIndex < 84 ? 0 : leftShiftIndex;
             SetRightMostNodeIndex(leftShiftIndex); // 전체 모든 큐 마지막 데이터 위치
-            //SetRightMostNodeIndex(GetRightModeNodeIndex() - 5); // 전체 모든 큐 마지막 데이터 위치
             SetTotalNodeCount(GetTotalNodeCount() - 1); // 전체 데이터 갯수 감소
 
             return value;
