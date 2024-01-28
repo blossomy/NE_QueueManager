@@ -5,15 +5,48 @@
 #include "QueueManager.h"
 
 using namespace std;
-//using namespace StaticSizeQueue;
-//using namespace MemCopyQueue;
-using namespace DoubleLinkedListQueue;
+
+using namespace MemCopyQueue;
+//using namespace DoubleLinkedListQueue;
 
 int main()
 {
     QueueManager manager;
     short int q[20];
     
+    {
+        q[0] = manager.CreateQueue();
+
+        for (int i = 0; i < 4; i++)
+        {
+            char a = 'a' + i % 26;
+            manager.Enqueue(q[0], a);
+        }
+
+        manager.PrintAllQueueData();
+    }
+
+    {
+        q[1] = manager.CreateQueue();
+        for (int i = 0; i < 4; i++)
+        {
+            char a = 'A' + i % 26;
+            manager.Enqueue(q[1], a);
+        }
+        manager.PrintAllQueueData();
+    }
+
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            char a = 'a' + i % 26;
+            manager.Enqueue(q[0], a);
+        }
+
+        manager.PrintAllQueueData();
+    }
+
+    return 0;
     //{
     //    q[0] = manager.CreateQueue();
     //    q[1] = manager.CreateQueue();
