@@ -17,9 +17,9 @@ int main()
 {
     int repeats = 10000;
 
-    Test<MemMoveQueue::QueueManager>("[MemMoveQueue::QueueManager] Time taken in milliseconds:", repeats);
-
     Test<DoubleLinkedListQueue::QueueManager>("[DoubleLinkedListQueue::QueueManager] Time taken in milliseconds:", repeats);
+
+    Test<MemMoveQueue::QueueManager>("[MemMoveQueue::QueueManager] Time taken in milliseconds:", repeats);
 
     return 0;
 }
