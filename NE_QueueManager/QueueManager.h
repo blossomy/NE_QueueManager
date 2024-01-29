@@ -4,19 +4,22 @@
 
 using namespace std;
 
+#define BUFFER_SIZE 2048
+#define QUEUE_MAX 20
+#define QUEUE_INFO_SIZE 4
+
+#define TOTAL_QUEUE_INFO_SIZE (QUEUE_INFO_SIZE * QUEUE_MAX) // 80
+#define RIGHTMOST_NODE_INDEX (TOTAL_QUEUE_INFO_SIZE + 0) // 80
+#define TOTAL_NODE_INDEX (TOTAL_QUEUE_INFO_SIZE + 2) // 82
+#define QUEUE_NODE_START_INDEX (TOTAL_QUEUE_INFO_SIZE + 4) // 84
+
+#define QUEUE_NODE_SIZE 5
+#define QUEUE_NODE_MAX ((BUFFER_SIZE - QUEUE_NODE_START_INDEX) / QUEUE_NODE_SIZE) // (2048-84)/5=392
+
+#define QUEUE_DATA_MAX (BUFFER_SIZE - QUEUE_NODE_START_INDEX) // 2048 - 84 = 1964
+
 namespace DoubleLinkedListQueue
 {
-    #define BUFFER_SIZE 2048
-    #define QUEUE_MAX 20
-    #define QUEUE_INFO_SIZE 4
-
-    #define TOTAL_QUEUE_INFO_SIZE (QUEUE_INFO_SIZE * QUEUE_MAX) // 80
-    #define RIGHTMOST_NODE_INDEX (TOTAL_QUEUE_INFO_SIZE + 0) // 80
-    #define TOTAL_NODE_INDEX (TOTAL_QUEUE_INFO_SIZE + 2) // 82
-    #define QUEUE_NODE_START_INDEX (TOTAL_QUEUE_INFO_SIZE + 4) // 84
-    #define QUEUE_NODE_SIZE 5
-    #define QUEUE_NODE_MAX ((BUFFER_SIZE - QUEUE_NODE_START_INDEX) / QUEUE_NODE_SIZE) // (2048-84)/5=392
-
     class QueueManager
     {
     public:
@@ -68,6 +71,7 @@ namespace DoubleLinkedListQueue
             }
 
             SetQueueStartIndex(queueID, 0);
+            SetQueueEndIndex(queueID, 0);
 
             return true;
         }
@@ -411,13 +415,20 @@ namespace MemCopyQueue
                 return false;
             }
 
-            // 모든 노드 리스트 지워야함
-            //while (GetQueueStartIndex(queueID) >= QUEUE_NODE_START_INDEX)
-            //{
-            //    Dequeue(queueID);
-            //}
+           
+            unsigned short startIndex = GetQueueStartIndex(queueID);
+            unsigned short endIndex = GetQueueEndIndex(queueID);
+            unsigned short size = endIndex - startIndex + 1;
 
+            // 큐 데이터들을 모두 0으로 만듬
+            memset(&buf[startIndex], 0, size);
+
+            // 큐의 시작을 0으로 해서 inactive로 만듬
             SetQueueStartIndex(queueID, 0);
+            SetQueueEndIndex(queueID, 0);
+
+            // 지워진 큐 크기만큼 전체 카운트 줄임
+            SetTotalNodeCount(GetTotalNodeCount() - size);
 
             return true;
         }
@@ -436,18 +447,31 @@ namespace MemCopyQueue
                 return false;
             }
 
+            if (GetTotalNodeCount() >= QUEUE_DATA_MAX)
+            {
+                OnError();
+                return false;
+            }
+
             unsigned short startIndex = GetQueueStartIndex(queueID);
             unsigned short endIndex = GetQueueEndIndex(queueID);
             unsigned short rightmostIndex = GetRightMostNodeIndex();
             rightmostIndex = rightmostIndex < QUEUE_NODE_START_INDEX ? QUEUE_NODE_START_INDEX : rightmostIndex + 1;
 
-            if (rightmostIndex == 2048 - 1)
+            if (rightmostIndex == 2047)
             {
-                //
-                //OnError();
-                //return false;
-
+                int breaker = 9;
+            }
+            if (rightmostIndex == BUFFER_SIZE)
+            {
                 // 큐데이터 버퍼 재정렬
+                // if(ArrangeQueueBuffer()==false)
+                //{
+                //    OnError();
+                //    return false;
+                //}
+
+                rightmostIndex = GetRightMostNodeIndex();
             }
 
             if (startIndex < QUEUE_NODE_START_INDEX)
@@ -466,18 +490,15 @@ namespace MemCopyQueue
             }
             else if (endIndex < rightmostIndex)
             {
-                memmove(&buf[endIndex + 2], &buf[endIndex + 1], rightmostIndex - endIndex);
+                if (rightmostIndex < BUFFER_SIZE - 1)
+                {
+                    memmove(&buf[endIndex + 2], &buf[endIndex + 1], rightmostIndex - endIndex);
+                }
                 buf[endIndex + 1] = value;
 
                 SetQueueEndIndex(queueID, endIndex + 1);
 
                 SetRightMostNodeIndex(rightmostIndex);
-                //bool firstElement = false;
-                //if (GetQueueStartIndex(queueID) < QUEUE_NODE_START_INDEX)
-                //{
-                //    firstElement = true;
-                //    SetQueueStartIndex(queueID, )
-                //}
 
                 // 버퍼 중간에 데이터 추가 후 그 데이터 뒤에 위피한 큐들의 Start, End 인덱스 재정의
                 for (int i = 0; i < QUEUE_MAX; i++)
@@ -495,36 +516,87 @@ namespace MemCopyQueue
 
             SetTotalNodeCount(GetTotalNodeCount() + 1);
 
-            if (rightmostIndex == 2048 - 1)
-            {
-                //
-                //OnError();
-                //return false;
-
-                // 큐데이터 버퍼 재정렬
-            }
-
             return true;
         }
 
         char Dequeue(short int queueID) {
-            if (queueID < 0 || queueID >= 20) {
+            if (queueID < 0 || queueID >= QUEUE_MAX)
+            {
                 OnError(); // 잘못된 큐 ID
-                return -1;
-            }
-            int headerIndex = queueID * 4;
-            if (buf[headerIndex] == 0) {
-                OnError(); // 비활성 큐
-                return -1;
+                return false;
             }
 
-           
+            if (GetQueueStartIndex(queueID) == 0)
+            {
+                OnError();
+                return false;
+            }
+
+            unsigned short startIndex = GetQueueStartIndex(queueID);
+            unsigned short endIndex = GetQueueEndIndex(queueID);
+            buf[startIndex] = 0;
+
+            if (startIndex < endIndex)
+            {
+                SetQueueStartIndex(queueID, startIndex + 1);
+            }
+            else if (startIndex == endIndex)
+            {
+                SetQueueStartIndex(queueID, 1);
+                SetQueueEndIndex(queueID, 0);
+            }
+
+            SetTotalNodeCount(GetTotalNodeCount() - 1);
 
             return 0;
         }
 
-        void OnError() {
+        void OnError() 
+        {
             std::cerr << "Queue error occurred" << std::endl;
+        }
+
+        bool ArrangeQueueBuffer()
+        {
+            unsigned int startIndices[QUEUE_MAX];
+            unsigned int sizes[QUEUE_MAX];
+            for (int i = 0; i < QUEUE_MAX; i++)
+            {
+                startIndices[i] = GetQueueStartIndex(i);
+                sizes[i] = GetQueueEndIndex(i) - GetQueueStartIndex(i) + 1;
+            }
+
+            unsigned short leftAlignIndex = 0;
+            unsigned short leftmostQueueIndex = BUFFER_SIZE;
+            int queueID;
+
+            do
+            {
+                queueID = -1;
+                for (int i = 0; i < QUEUE_MAX; i++)
+                {
+                    if (startIndices[i] < 84)
+                        continue;
+
+                    if (startIndices[i] < leftmostQueueIndex)
+                    {
+                        leftmostQueueIndex = startIndices[i];
+                        queueID = i;
+                    }
+                }
+
+                leftAlignIndex = leftAlignIndex < 84 ? 84 : leftAlignIndex + 1;
+
+                memmove(&buf[leftAlignIndex], &buf[startIndices[queueID]], sizes[queueID]);
+
+                leftAlignIndex = leftAlignIndex + sizes[queueID];
+
+                startIndices[queueID] = 0;
+                sizes[queueID] = 0;
+
+            } while (queueID >= 0);
+
+            return true;
         }
 
         void PrintQueueData(short int queueID)
@@ -553,22 +625,13 @@ namespace MemCopyQueue
 
                 PrintQueueData(i);
             }
-            cout << ">>>" << endl;
+            
+            cout << "Total data count: " << GetTotalNodeCount() << " >>>" << endl;
         }
 
     private:
         char buf[2048];
         char* pc;
-
-        #define BUFFER_SIZE 2048
-        #define QUEUE_MAX 20
-        #define QUEUE_INFO_SIZE 4
-
-        #define TOTAL_QUEUE_INFO_SIZE (QUEUE_INFO_SIZE * QUEUE_MAX) // 80
-        #define RIGHTMOST_NODE_INDEX (TOTAL_QUEUE_INFO_SIZE + 0) // 80
-        #define TOTAL_NODE_INDEX (TOTAL_QUEUE_INFO_SIZE + 2) // 82
-        #define QUEUE_NODE_START_INDEX (TOTAL_QUEUE_INFO_SIZE + 4) // 84
-
 
         // 특정 인덱스부터 2바이트를 써서 unsigned short를 넣어줌
         void _setUI16ToCharArray(unsigned short index, unsigned short value)
