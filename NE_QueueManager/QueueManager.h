@@ -18,7 +18,6 @@ using namespace std;
 
 #define QUEUE_DATA_MAX (BUFFER_SIZE - QUEUE_NODE_START_INDEX) // 2048 - 84 = 1964
 
-
 #define SetQueueStartIndex(queueID, index) (_setUI16ToCharArray((queueID) * QUEUE_INFO_SIZE, (index)))
 #define GetQueueStartIndex(queueID) (_getUI16FromCharArray((queueID) * QUEUE_INFO_SIZE))
 
@@ -277,7 +276,7 @@ namespace DoubleLinkedListQueue
         char* pc;
 
         // 특정 인덱스부터 2바이트를 써서 unsigned short를 넣어줌
-        void _setUI16ToCharArray(unsigned short index, unsigned short value)
+        inline void _setUI16ToCharArray(unsigned short index, unsigned short value)
         {
             if (index < 0 || index > BUFFER_SIZE - sizeof(unsigned short))
             {
@@ -291,7 +290,7 @@ namespace DoubleLinkedListQueue
         }
 
         // 특정 인덱스부터 2바이트를 써서 unsigned short를 가져옴
-        unsigned short _getUI16FromCharArray(unsigned short index)
+        inline unsigned short _getUI16FromCharArray(unsigned short index)
         {
             if (index < 0 || index > BUFFER_SIZE - sizeof(unsigned short))
             {
@@ -686,7 +685,7 @@ namespace MemMoveQueue
         char* pc;
 
         // 특정 인덱스부터 2바이트를 써서 unsigned short를 넣어줌
-        void _setUI16ToCharArray(unsigned short index, unsigned short value)
+        inline void _setUI16ToCharArray(unsigned short index, unsigned short value)
         {
             if (index < 0 || index > BUFFER_SIZE - sizeof(unsigned short))
             {
@@ -700,7 +699,7 @@ namespace MemMoveQueue
         }
 
         // 특정 인덱스부터 2바이트를 써서 unsigned short를 가져옴
-        unsigned short _getUI16FromCharArray(unsigned short index)
+        inline unsigned short _getUI16FromCharArray(unsigned short index)
         {
             if (index < 0 || index > BUFFER_SIZE - sizeof(unsigned short))
             {
