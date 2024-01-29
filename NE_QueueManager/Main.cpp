@@ -10,8 +10,19 @@
 
 using namespace std;
 
-using namespace MemCopyQueue;
-//using namespace DoubleLinkedListQueue;
+template<typename T>
+void Test(const char* text, int repeats);
+
+int main()
+{
+    int repeats = 10000;
+
+    Test<MemMoveQueue::QueueManager>("[MemMoveQueue::QueueManager] Time taken in milliseconds:", repeats);
+
+    Test<DoubleLinkedListQueue::QueueManager>("[DoubleLinkedListQueue::QueueManager] Time taken in milliseconds:", repeats);
+
+    return 0;
+}
 
 #ifdef _WIN32
 class QueryPerformanceTimer
@@ -67,202 +78,137 @@ public:
 };
 #endif
 
-int main()
+template<typename T>
+void Test(const char* text, int repeats)
 {
-    ScopedQueryPerformanceTimer timer("Time taken in milliseconds:");
+    cout << endl << "======================================================================" << endl;
 
-    QueueManager manager;
+    ScopedQueryPerformanceTimer timer(text);
+
+    T manager;
     short int q[20];
-   
-    //{
-    //    q[0] = manager.CreateQueue();
 
-    //    for (int i = 0; i < 4; i++)
-    //    {
-    //        char a = 'a' + i % 26;
-    //        manager.Enqueue(q[0], a);
-    //    }
-
-    //    manager.PrintAllQueueData();
-    //}
-
-    //{
-    //    q[1] = manager.CreateQueue();
-    //    for (int i = 0; i < 4; i++)
-    //    {
-    //        char a = 'A' + i % 26;
-    //        manager.Enqueue(q[1], a);
-    //    }
-    //    manager.PrintAllQueueData();
-    //}
-
-    //{
-    //    for (int i = 0; i < 8; i++)
-    //    {
-    //        char a = 'a' + i % 26;
-    //        manager.Enqueue(q[0], a);
-    //    }
-
-    //    manager.PrintAllQueueData();
-    //}
-
-    //{
-    //    manager.DestroyQueue(q[0]);
-    //    manager.PrintAllQueueData();
-    //}
-
-    //return 0;
-
-    //{
-    //    q[0] = manager.CreateQueue();
-    //    q[1] = manager.CreateQueue();
-    //    q[2] = manager.CreateQueue();
-    //    
-    //    for (int i = 0; i < 4; i++)
-    //    {
-    //        char a = 'a' + i % 26;
-    //        manager.Enqueue(q[0], a);
-    //    }
-
-    //    for (int i = 0; i < 4; i++)
-    //    {
-    //        char a = 'h' + i % 26;
-    //        manager.Enqueue(q[1], a);
-    //    }
-
-    //    for (int i = 0; i < 4; i++)
-    //    {
-    //        char a = 'w' + i % 26;
-    //        manager.Enqueue(q[2], a);
-    //    }
-    //    manager.PrintAllQueueData();
-
-
-    //    for (int i = 0; i < 4; i++)
-    //    {
-    //        manager.Dequeue(q[0]);
-    //        manager.Dequeue(q[1]);
-    //        manager.Dequeue(q[2]);
-    //        manager.PrintAllQueueData();
-    //    }
-
-    //    return 0;
-    //}
-
+    for (int n = 0; n < repeats; n++)
     {
-        q[0] = manager.CreateQueue();
-
-        for (int i = 0; i < 4; i++)
         {
-            char a = 'a' + i % 26;
-            manager.Enqueue(q[0], a);
+            q[0] = manager.CreateQueue();
+
+            for (int i = 0; i < 4; i++)
+            {
+                char a = 'a' + i % 26;
+                manager.Enqueue(q[0], a);
+            }
         }
 
-        manager.PrintAllQueueData();
-    }
-
-    {
-        manager.DestroyQueue(q[0]);
-        manager.PrintAllQueueData();
-    }
-
-    {
-        q[0] = manager.CreateQueue();
-
-        for (int i = 0; i < 14; i++)
         {
-            char a = 'a' + i % 26;
-            manager.Enqueue(q[0], a);
+            manager.DestroyQueue(q[0]);
         }
-        manager.PrintAllQueueData();
-    }
 
-    {
-        q[1] = manager.CreateQueue();
-        for (int i = 0; i < 4; i++)
         {
-            char a = 'A' + i % 26;
-            manager.Enqueue(q[1], a);
+            q[0] = manager.CreateQueue();
+
+            for (int i = 0; i < 14; i++)
+            {
+                char a = 'a' + i % 26;
+                manager.Enqueue(q[0], a);
+            }
         }
-        manager.PrintAllQueueData();
-    }
 
-    {
-        for (int i = 0; i < 4; i++)
         {
-            char a = 'a' + i % 26;
-            manager.Enqueue(q[0], a);
+            q[1] = manager.CreateQueue();
+            for (int i = 0; i < 4; i++)
+            {
+                char a = 'A' + i % 26;
+                manager.Enqueue(q[1], a);
+            }
         }
-        manager.PrintAllQueueData();
-    }
 
-    {
-        q[2] = manager.CreateQueue();
-        for (int i = 0; i < 8; i++)
         {
-            char a = 'a' + i % 26;
-            manager.Enqueue(q[2], a);
+            for (int i = 0; i < 4; i++)
+            {
+                char a = 'a' + i % 26;
+                manager.Enqueue(q[0], a);
+            }
         }
-        manager.PrintAllQueueData();
-    }
 
-    {
-        for (int i = 0; i < 4; i++)
         {
-            manager.Dequeue(q[0]);
-            manager.Dequeue(q[1]);
-            manager.Dequeue(q[2]);
+            q[2] = manager.CreateQueue();
+            for (int i = 0; i < 8; i++)
+            {
+                char a = 'a' + i % 26;
+                manager.Enqueue(q[2], a);
+            }
+        }
+
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                manager.Dequeue(q[0]);
+                manager.Dequeue(q[1]);
+                manager.Dequeue(q[2]);
+            }
+        }
+
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                char a = 'A' + i % 26;
+                manager.Enqueue(q[1], a);
+            }
+        }
+
+        {
+            manager.DestroyQueue(q[1]);
+            manager.DestroyQueue(q[0]); // <---- BUG! n=43
+        }
+
+        {
+            q[0] = manager.CreateQueue();
+            for (int i = 0; i < 26; i++)
+                manager.Enqueue(q[0], 'a' + i % 26);
+        }
+
+        {
+            q[1] = manager.CreateQueue();
+            for (int i = 0; i < 10; i++)
+            {
+                manager.Enqueue(q[1], 'a' + i % 26);
+                manager.Enqueue(q[2], 'a' + i % 26);
+            }
+        }
+
+        {
+            for (int i = 3; i < 20; i++)
+            {
+                q[i] = manager.CreateQueue();
+            }
+            for (int i = 0; i < 10; i++)
+            {
+                manager.Dequeue(q[0]);
+                manager.Dequeue(q[1]);
+            }
+
+            for (int i = 0; i < 18; i++)
+            {
+                for (int j = 0; j < 20; j++)
+                {
+                    manager.Enqueue(q[j], 'A' + i % 26);
+                }
+            }
+        }
+
+        if (n == repeats - 1)
+        {
             manager.PrintAllQueueData();
         }
 
-    }
-
-    {
-        for (int i = 0; i < 10; i++)
         {
-            char a = 'A' + i % 26;
-            manager.Enqueue(q[1], a);
-        }
-        manager.PrintAllQueueData();
-    }
-
-    {
-        manager.DestroyQueue(q[1]);
-        manager.DestroyQueue(q[0]);
-        manager.PrintAllQueueData();
-    }
-
-    {
-        q[0] = manager.CreateQueue();
-        for (int i = 0; i < 26; i++)
-            manager.Enqueue(q[0], 'a' + i % 26);
-
-        manager.PrintAllQueueData();
-    }
-
-    {
-        q[1] = manager.CreateQueue();
-        for (int i = 0; i < 10; i++)
-        {
-            manager.Enqueue(q[1], 'a' + i % 26);
-            manager.Enqueue(q[2], 'a' + i % 26);
-        }
-
-        manager.PrintAllQueueData();
-    }
-
-    {
-        manager.Dequeue(q[0]);
-        manager.Dequeue(q[0]);
-
-        for (int i = 0; i < 1000; i++)
-        {
-            manager.Enqueue(q[0], 'A' + i % 26);
-            manager.Enqueue(q[1], 'A' + i % 26);
+            for (int i = 0; i < 20; i++)
+            {
+                manager.DestroyQueue(i);
+            }
         }
     }
-
-    return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

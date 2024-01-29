@@ -18,6 +18,26 @@ using namespace std;
 
 #define QUEUE_DATA_MAX (BUFFER_SIZE - QUEUE_NODE_START_INDEX) // 2048 - 84 = 1964
 
+
+#define SetQueueStartIndex(queueID, index) (_setUI16ToCharArray((queueID) * QUEUE_INFO_SIZE, (index)))
+#define GetQueueStartIndex(queueID) (_getUI16FromCharArray((queueID) * QUEUE_INFO_SIZE))
+
+#define SetQueueEndIndex(queueID, index) (_setUI16ToCharArray((queueID) * QUEUE_INFO_SIZE + 2, (index)))
+#define GetQueueEndIndex(queueID) (_getUI16FromCharArray((queueID) * QUEUE_INFO_SIZE + 2))
+
+#define SetRightMostNodeIndex(index) (_setUI16ToCharArray(RIGHTMOST_NODE_INDEX, (index)))
+#define GetRightMostNodeIndex() (_getUI16FromCharArray(RIGHTMOST_NODE_INDEX))
+
+#define SetTotalNodeCount(index) (_setUI16ToCharArray(TOTAL_NODE_INDEX, (index)))
+#define GetTotalNodeCount() (_getUI16FromCharArray(TOTAL_NODE_INDEX))
+
+#define SetNodePrevIndex(index, prevIndex) (_setUI16ToCharArray((index) + 1, (prevIndex)))
+#define GetNodePrevIndex(index) (_getUI16FromCharArray((index) + 1))
+
+#define SetNodeNextIndex(index, nextIndex) (_setUI16ToCharArray((index) + 3, (nextIndex)))
+#define GetNodeNextIndex(index) (_getUI16FromCharArray((index) + 3))
+
+
 namespace DoubleLinkedListQueue
 {
     class QueueManager
@@ -106,7 +126,7 @@ namespace DoubleLinkedListQueue
                 firstElement = true;
             }
 
-            SetNodeData(index, value);
+            buf[index] = value;
 
             SetNodePrevIndex(index, endIndex);
             SetNodeNextIndex(index, 0);
@@ -144,7 +164,7 @@ namespace DoubleLinkedListQueue
             }
 
             unsigned short index = GetQueueStartIndex(queueID);
-            char value  = GetNodeData(index);
+            char value  = buf[index];
 
             // 마지막 노드 인덱스
             unsigned int rightmostIndex = GetRightMostNodeIndex();
@@ -229,7 +249,7 @@ namespace DoubleLinkedListQueue
 
             while (startIndex >= QUEUE_NODE_START_INDEX)
             {
-                cout << GetNodeData(startIndex) << ",";
+                cout << buf[startIndex] << ",";
                 startIndex = GetNodeNextIndex(startIndex);
             }
 
@@ -248,6 +268,8 @@ namespace DoubleLinkedListQueue
                 PrintQueueData(i);
             }
             cout << ">>>" << endl;
+
+            cout << "Total data count: " << GetTotalNodeCount() << " >>>" << endl << endl;
         }
 
     private:
@@ -288,7 +310,7 @@ namespace DoubleLinkedListQueue
 
 
         // 버퍼의 처음 84바이트(인덱스 0~83)를 큐관리를 위한 헤더로 사용함
-
+/*
         // 큐 하나당 처음 2바이트는 큐의 시작 인덱스
         void SetQueueStartIndex(unsigned short queueID, unsigned short index)
         {
@@ -328,7 +350,8 @@ namespace DoubleLinkedListQueue
         {
             return _getUI16FromCharArray(TOTAL_NODE_INDEX);
         }
-
+*/
+/*
         void SetNodeData(unsigned short index, char c)
         {
             if (index < 0 || index >= BUFFER_SIZE)
@@ -349,7 +372,8 @@ namespace DoubleLinkedListQueue
 
             return buf[index];
         }
-
+*/
+/*
         void SetNodePrevIndex(unsigned short index, unsigned short prevIndex)
         {
             _setUI16ToCharArray(index + 1, prevIndex);
@@ -367,10 +391,11 @@ namespace DoubleLinkedListQueue
         {
             return _getUI16FromCharArray(index + 3);
         }
+*/
     };
 }
 
-namespace MemCopyQueue
+namespace MemMoveQueue
 {
     class QueueManager
     {
@@ -414,7 +439,6 @@ namespace MemCopyQueue
                 OnError(); // 잘못된 큐 ID
                 return false;
             }
-
            
             unsigned short startIndex = GetQueueStartIndex(queueID);
             unsigned short endIndex = GetQueueEndIndex(queueID);
@@ -429,6 +453,8 @@ namespace MemCopyQueue
 
             // 지워진 큐 크기만큼 전체 카운트 줄임
             SetTotalNodeCount(GetTotalNodeCount() - size);
+
+            ArrangeQueueBuffer();
 
             return true;
         }
@@ -465,11 +491,11 @@ namespace MemCopyQueue
             if (rightmostIndex == BUFFER_SIZE)
             {
                 // 큐데이터 버퍼 재정렬
-                // if(ArrangeQueueBuffer()==false)
-                //{
-                //    OnError();
-                //    return false;
-                //}
+                if(ArrangeQueueBuffer()==false)
+                {
+                    OnError();
+                    return false;
+                }
 
                 rightmostIndex = GetRightMostNodeIndex();
             }
@@ -553,29 +579,38 @@ namespace MemCopyQueue
 
         void OnError() 
         {
-            std::cerr << "Queue error occurred" << std::endl;
+            cerr << "Queue error occurred!" << endl;
         }
 
         bool ArrangeQueueBuffer()
         {
-            unsigned int startIndices[QUEUE_MAX];
-            unsigned int sizes[QUEUE_MAX];
+            unsigned int startIndices[QUEUE_MAX] = {};
+            unsigned int endIndices[QUEUE_MAX] = {};
+            unsigned int sizes[QUEUE_MAX] = {};
             for (int i = 0; i < QUEUE_MAX; i++)
             {
                 startIndices[i] = GetQueueStartIndex(i);
-                sizes[i] = GetQueueEndIndex(i) - GetQueueStartIndex(i) + 1;
+                endIndices[i] = GetQueueEndIndex(i);
+                if (startIndices[i] < QUEUE_NODE_START_INDEX)
+                    continue;
+
+                sizes[i] = endIndices[i] - startIndices[i] + 1;
             }
 
             unsigned short leftAlignIndex = 0;
             unsigned short leftmostQueueIndex = BUFFER_SIZE;
+            unsigned short newRightmostIndex = 0;
             int queueID;
 
             do
             {
+                unsigned short leftmostQueueIndex = BUFFER_SIZE;
+
                 queueID = -1;
+
                 for (int i = 0; i < QUEUE_MAX; i++)
                 {
-                    if (startIndices[i] < 84)
+                    if (startIndices[i] < QUEUE_NODE_START_INDEX)
                         continue;
 
                     if (startIndices[i] < leftmostQueueIndex)
@@ -585,16 +620,33 @@ namespace MemCopyQueue
                     }
                 }
 
-                leftAlignIndex = leftAlignIndex < 84 ? 84 : leftAlignIndex + 1;
+                if (queueID < 0)
+                    continue;
+
+                leftAlignIndex = leftAlignIndex < QUEUE_NODE_START_INDEX ? QUEUE_NODE_START_INDEX : leftAlignIndex + 1;
 
                 memmove(&buf[leftAlignIndex], &buf[startIndices[queueID]], sizes[queueID]);
+                unsigned short newStartIndex = leftAlignIndex;
+                unsigned short newEndIndex = leftAlignIndex + sizes[queueID] - 1;
+                
+                memset(&buf[newEndIndex + 1], 0, endIndices[queueID] - newEndIndex);
+                
+                leftAlignIndex = newEndIndex;
+                newRightmostIndex = newEndIndex;
 
-                leftAlignIndex = leftAlignIndex + sizes[queueID];
+                SetQueueStartIndex(queueID, newStartIndex);
+                SetQueueEndIndex(queueID, newEndIndex);
 
                 startIndices[queueID] = 0;
+                endIndices[queueID] = 0;
                 sizes[queueID] = 0;
 
             } while (queueID >= 0);
+
+            if (newRightmostIndex >= QUEUE_NODE_START_INDEX)
+            {
+                SetRightMostNodeIndex(newRightmostIndex);
+            }
 
             return true;
         }
@@ -626,7 +678,7 @@ namespace MemCopyQueue
                 PrintQueueData(i);
             }
             
-            cout << "Total data count: " << GetTotalNodeCount() << " >>>" << endl;
+            cout << "Total data count: " << GetTotalNodeCount() << " >>>" << endl << endl;
         }
 
     private:
@@ -667,7 +719,7 @@ namespace MemCopyQueue
 
 
         // 버퍼의 처음 84바이트(인덱스 0~83)를 큐관리를 위한 헤더로 사용함
-
+/*
         // 큐 하나당 처음 2바이트는 큐의 시작 인덱스
         void SetQueueStartIndex(unsigned short queueID, unsigned short index)
         {
@@ -707,7 +759,7 @@ namespace MemCopyQueue
         {
             return _getUI16FromCharArray(TOTAL_NODE_INDEX);
         }
-
+*/
     };
 }
 
