@@ -149,6 +149,9 @@ namespace DoubleLinkedListQueue
         SetRightMostNodeIndex(index); // Entire queue last data position
         SetTotalNodeCount(GetTotalNodeCount() + 1); // Increase in total data number
 
+
+        
+
         return true;
     }
 

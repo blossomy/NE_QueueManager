@@ -35,8 +35,11 @@ namespace DoubleLinkedListQueue
             }
 
             // Split the unsigned short value into two bytes.
-            buf[index] = value & 0xFF;         // Low byte
-            buf[index + 1] = (value >> 8) & 0xFF; // High byte
+            //buf[index] = value & 0xFF;         // Low byte
+            //buf[index + 1] = (value >> 8) & 0xFF; // High byte
+
+            unsigned short* us = reinterpret_cast<unsigned short*>(&buf[index]);
+            *us = value;
         }
 
         // Retrieves an unsigned short by using 2 bytes starting from a specific index.
@@ -51,8 +54,10 @@ namespace DoubleLinkedListQueue
             unsigned short value = 0;
 
             // Restores an unsigned short value by combining the high-order and low-order bytes.
-            value |= static_cast<unsigned char>(buf[index + 1]) << 8; // High byte
-            value |= static_cast<unsigned char>(buf[index]);          // Low byte
+            //value |= static_cast<unsigned char>(buf[index + 1]) << 8; // High byte
+            //value |= static_cast<unsigned char>(buf[index]);          // Low byte
+
+            value = *(reinterpret_cast<unsigned short*>(&buf[index]));
 
             return value;
         }
