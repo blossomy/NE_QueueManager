@@ -17,7 +17,7 @@ using namespace std;
 #define QUEUE_NODE_MAX ((BUFFER_SIZE - QUEUE_NODE_START_INDEX) / QUEUE_NODE_SIZE) // (2048-84)/5=392
 
 #define QUEUE_DATA_MAX (BUFFER_SIZE - QUEUE_NODE_START_INDEX) // 2048 - 84 = 1964
-
+/*
 // MACRO FUNCTIONS
 // The first 2 bytes per queue are the start index of the queue.
 #define SetQueueStartIndex(queueID, index) (_setUI16ToCharArray((queueID) * QUEUE_INFO_SIZE, (index)))
@@ -44,7 +44,7 @@ using namespace std;
 // Get/Set the next node index for a specific node.
 #define SetNodeNextIndex(index, nextIndex) (_setUI16ToCharArray((index) + 3, (nextIndex)))
 #define GetNodeNextIndex(index) (_getUI16FromCharArray((index) + 3))
-
+*/
 
 namespace DoubleLinkedListQueue
 {
@@ -58,7 +58,7 @@ namespace DoubleLinkedListQueue
 
         //SetRightMostNodeIndex(0);
         //SetTotalNodeCount(0);
-        QueueHeader* header = reinterpret_cast<QueueHeader*>(pc);
+        QueueHeader* header = GetQueueHeader();
         for (int i = 0; i < QUEUE_MAX; ++i) 
         {
             header->Info[i].startDataIndex = 0;
@@ -122,19 +122,23 @@ namespace DoubleLinkedListQueue
 
     bool QueueManager::Enqueue(short int queueID, char value)
     {
+        QueueHeader* header = GetQueueHeader();
+
         if (queueID < 0 || queueID >= QUEUE_MAX)
         {
             OnError();
             return false;
         }
 
-        if (GetQueueStartIndex(queueID) == 0)
+        //if (GetQueueStartIndex(queueID) == 0)
+        if(header->Info[queueID].startDataIndex == 0)
         {
             OnError();
             return false;
         }
 
-        if (GetTotalNodeCount() >= QUEUE_NODE_MAX)
+        //if (GetTotalNodeCount() >= QUEUE_NODE_MAX)
+        if (header->totalDataCount >= QUEUE_NODE_MAX)
         {
             OnError();
             return false;
@@ -142,7 +146,6 @@ namespace DoubleLinkedListQueue
 
         //unsigned short endIndex = GetQueueEndIndex(queueID);
         //unsigned short index = GetRightMostNodeIndex();
-        QueueHeader* header = GetQueueHeader();
         unsigned short endIndex = header->Info[queueID].endDataIndex;
         unsigned short index = header->rightmostDataIndex;
 
@@ -190,19 +193,21 @@ namespace DoubleLinkedListQueue
 
     char QueueManager::Dequeue(short int queueID)
     {
+        QueueHeader* header = GetQueueHeader();
+
         if (queueID < 0 || queueID >= QUEUE_MAX)
         {
             OnError();
             return -1;
         }
 
-        if (GetQueueStartIndex(queueID) < QUEUE_NODE_START_INDEX)
+        //if (GetQueueStartIndex(queueID) < QUEUE_NODE_START_INDEX)
+        if (header->Info[queueID].startDataIndex < QUEUE_NODE_START_INDEX)
         {
             OnError();
             return -1;
         }
 
-        QueueHeader* header = GetQueueHeader();
         //unsigned short index = GetQueueStartIndex(queueID);
         unsigned short index = header->Info[queueID].startDataIndex;
         //char value = buf[index];
@@ -340,7 +345,8 @@ namespace DoubleLinkedListQueue
         }
         cout << ">>>" << endl;
 
-        cout << "Total data count: " << GetTotalNodeCount() << " >>>" << endl << endl;
+        //cout << "Total data count: " << GetTotalNodeCount() << " >>>" << endl << endl;
+        cout << "Total data count: " << header->totalDataCount << " >>>" << endl << endl;
     }
 }
 
@@ -349,25 +355,41 @@ namespace MemMoveQueue
     QueueManager::QueueManager()
         : pc(buf)
     {
-        for (int i = 0; i < QUEUE_MAX; ++i) {
-            SetQueueStartIndex(i, 0); // If 0, it has not been created yet.
-            SetQueueEndIndex(i, 0);
+        //for (int i = 0; i < QUEUE_MAX; ++i) {
+        //    SetQueueStartIndex(i, 0); // If 0, it has not been created yet.
+        //    SetQueueEndIndex(i, 0);
+        //}
+
+        //SetRightMostNodeIndex(0);
+        //SetTotalNodeCount(0);
+        QueueHeader* header = GetQueueHeader();
+        for (int i = 0; i < QUEUE_MAX; ++i)
+        {
+            header->Info[i].startDataIndex = 0;
+            header->Info[i].endDataIndex = 0;
         }
 
-        SetRightMostNodeIndex(0);
-        SetTotalNodeCount(0);
+        header->rightmostDataIndex = 0;
+        header->totalDataCount = 0;
     }
 
     QueueManager::~QueueManager() {}
 
     short int QueueManager::CreateQueue()
     {
+        QueueHeader* header = GetQueueHeader();
         for (short int i = 0; i < QUEUE_MAX; ++i)
         {
-            if (GetQueueStartIndex(i) == 0)
+            //if (GetQueueStartIndex(i) == 0)
+            //{
+            //    SetQueueStartIndex(i, 1); // If greater than 0, the queue is in use.
+            //    SetQueueEndIndex(i, 0);
+            //    return i;
+            //}
+            if (header->Info[i].startDataIndex == 0)
             {
-                SetQueueStartIndex(i, 1); // If greater than 0, the queue is in use.
-                SetQueueEndIndex(i, 0);
+                header->Info[i].startDataIndex = 1;
+                header->Info[i].endDataIndex = 0;
                 return i;
             }
         }
@@ -383,19 +405,25 @@ namespace MemMoveQueue
             return false;
         }
 
-        unsigned short startIndex = GetQueueStartIndex(queueID);
-        unsigned short endIndex = GetQueueEndIndex(queueID);
+        QueueHeader* header = GetQueueHeader();
+        //unsigned short startIndex = GetQueueStartIndex(queueID);
+        unsigned short startIndex = header->Info[queueID].startDataIndex;
+        //unsigned short endIndex = GetQueueEndIndex(queueID);
+        unsigned short endIndex = header->Info[queueID].endDataIndex;
         unsigned short size = endIndex - startIndex + 1;
 
         // Set all queue data to 0
         memset(&buf[startIndex], 0, size);
 
         // Start the queue at 0 and make it inactive
-        SetQueueStartIndex(queueID, 0);
-        SetQueueEndIndex(queueID, 0);
+        //SetQueueStartIndex(queueID, 0);
+        //SetQueueEndIndex(queueID, 0);
+        header->Info[queueID].startDataIndex = 0;
+        header->Info[queueID].endDataIndex = 0;
 
         // Decrease the total count by the removed queue size
-        SetTotalNodeCount(GetTotalNodeCount() - size);
+        //SetTotalNodeCount(GetTotalNodeCount() - size);
+        header->totalDataCount -= size;
 
         // Gather all queues sequentially in the buffer without empty space.
         ArrangeQueueBuffer();
@@ -405,27 +433,34 @@ namespace MemMoveQueue
 
     bool QueueManager::Enqueue(short int queueID, char value)
     {
+        QueueHeader* header = GetQueueHeader();
+
         if (queueID < 0 || queueID >= QUEUE_MAX)
         {
             OnError();
             return false;
         }
 
-        if (GetQueueStartIndex(queueID) == 0)
+        //if (GetQueueStartIndex(queueID) == 0)
+        if(header->Info[queueID].startDataIndex == 0)
         {
             OnError();
             return false;
         }
 
-        if (GetTotalNodeCount() >= QUEUE_DATA_MAX)
+        //if (GetTotalNodeCount() >= QUEUE_DATA_MAX)
+        if(header->totalDataCount >= QUEUE_DATA_MAX)
         {
             OnError();
             return false;
         }
 
-        unsigned short startIndex = GetQueueStartIndex(queueID);
-        unsigned short endIndex = GetQueueEndIndex(queueID);
-        unsigned short rightmostIndex = GetRightMostNodeIndex();
+        //unsigned short startIndex = GetQueueStartIndex(queueID);
+        //unsigned short endIndex = GetQueueEndIndex(queueID);
+        //unsigned short rightmostIndex = GetRightMostNodeIndex();
+        unsigned short startIndex = header->Info[queueID].startDataIndex;
+        unsigned short endIndex = header->Info[queueID].endDataIndex;
+        unsigned short rightmostIndex = header->rightmostDataIndex;
         rightmostIndex = rightmostIndex < QUEUE_NODE_START_INDEX ? QUEUE_NODE_START_INDEX : rightmostIndex + 1;
 
         if (rightmostIndex == BUFFER_SIZE)
@@ -437,7 +472,8 @@ namespace MemMoveQueue
                 return false;
             }
 
-            rightmostIndex = GetRightMostNodeIndex();
+            //rightmostIndex = GetRightMostNodeIndex();
+            rightmostIndex = header->rightmostDataIndex;
         }
 
         if (startIndex < QUEUE_NODE_START_INDEX)
@@ -449,10 +485,13 @@ namespace MemMoveQueue
         if (endIndex == rightmostIndex)
         {
             buf[endIndex] = value;
-            SetRightMostNodeIndex(rightmostIndex);
+            //SetRightMostNodeIndex(rightmostIndex);
+            header->rightmostDataIndex = rightmostIndex;
 
-            SetQueueStartIndex(queueID, startIndex);
-            SetQueueEndIndex(queueID, endIndex);
+            //SetQueueStartIndex(queueID, startIndex);
+            //SetQueueEndIndex(queueID, endIndex);
+            header->Info[queueID].startDataIndex = startIndex;
+            header->Info[queueID].endDataIndex = endIndex;
         }
         else if (endIndex < rightmostIndex)
         {
@@ -462,62 +501,79 @@ namespace MemMoveQueue
             }
             buf[endIndex + 1] = value;
 
-            SetQueueEndIndex(queueID, endIndex + 1);
+            //SetQueueEndIndex(queueID, endIndex + 1);
+            header->Info[queueID].endDataIndex = endIndex + 1;
 
-            SetRightMostNodeIndex(rightmostIndex);
+            //SetRightMostNodeIndex(rightmostIndex);
+            header->rightmostDataIndex = rightmostIndex;
 
             // After adding data to the middle of the buffer, 
             // redefine the Start and End indexes of the queues behind the data.
             for (int i = 0; i < QUEUE_MAX; i++)
             {
-                if (GetQueueStartIndex(i) == 0)
+                //if (GetQueueStartIndex(i) == 0)
+                if(header->Info[i].startDataIndex == 0)
                     continue;
 
-                if (GetQueueStartIndex(i) > endIndex)
+                //if (GetQueueStartIndex(i) > endIndex)
+                if (header->Info[i].startDataIndex > endIndex)
                 {
-                    SetQueueStartIndex(i, GetQueueStartIndex(i) + 1);
-                    SetQueueEndIndex(i, GetQueueEndIndex(i) + 1);
+                    //SetQueueStartIndex(i, GetQueueStartIndex(i) + 1);
+                    //SetQueueEndIndex(i, GetQueueEndIndex(i) + 1);
+                    header->Info[i].startDataIndex++;
+                    header->Info[i].endDataIndex++;
                 }
             }
         }
 
-        SetTotalNodeCount(GetTotalNodeCount() + 1);
+        //SetTotalNodeCount(GetTotalNodeCount() + 1);
+        header->totalDataCount++;
 
         return true;
     }
 
     char QueueManager::Dequeue(short int queueID) 
     {
+        QueueHeader* header = GetQueueHeader();
+
         if (queueID < 0 || queueID >= QUEUE_MAX)
         {
             OnError();
             return -1;
         }
 
-        if (GetQueueStartIndex(queueID) == 0)
+        //if (GetQueueStartIndex(queueID) == 0)
+        if(header->Info[queueID].startDataIndex == 0)
         {
             OnError();
             return -1;
         }
 
-        unsigned short startIndex = GetQueueStartIndex(queueID);
-        unsigned short endIndex = GetQueueEndIndex(queueID);
+        //unsigned short startIndex = GetQueueStartIndex(queueID);
+        //unsigned short endIndex = GetQueueEndIndex(queueID);
+        unsigned short startIndex = header->Info[queueID].startDataIndex;
+        unsigned short endIndex = header->Info[queueID].endDataIndex;
+
         char c = buf[startIndex];
         buf[startIndex] = 0;
 
         // Only the data at the front is erased and the starting index is updated.
         if (startIndex < endIndex)
         {
-            SetQueueStartIndex(queueID, startIndex + 1);
+            //SetQueueStartIndex(queueID, startIndex + 1);
+            header->Info[queueID].startDataIndex = startIndex + 1;
         }
         else if (startIndex == endIndex)
         {
             // The dequeued data is the last data in the queue.
-            SetQueueStartIndex(queueID, 1);
-            SetQueueEndIndex(queueID, 0);
+            //SetQueueStartIndex(queueID, 1);
+            //SetQueueEndIndex(queueID, 0);
+            header->Info[queueID].startDataIndex = 1;
+            header->Info[queueID].endDataIndex = 0;
         }
 
-        SetTotalNodeCount(GetTotalNodeCount() - 1);
+        //SetTotalNodeCount(GetTotalNodeCount() - 1);
+        header->totalDataCount--;
 
         return c;
     }
@@ -529,6 +585,7 @@ namespace MemMoveQueue
 
     bool QueueManager::ArrangeQueueBuffer()
     {
+        QueueHeader* header = GetQueueHeader();
         //All queue data is rearranged sequentially without empty space in the buffer.
 
         // The start, end, and size of all queues are stored in advance for convenience.
@@ -537,8 +594,10 @@ namespace MemMoveQueue
         unsigned int sizes[QUEUE_MAX] = {};
         for (int i = 0; i < QUEUE_MAX; i++)
         {
-            startIndices[i] = GetQueueStartIndex(i);
-            endIndices[i] = GetQueueEndIndex(i);
+            //startIndices[i] = GetQueueStartIndex(i);
+            startIndices[i] = header->Info[i].startDataIndex;
+            //endIndices[i] = GetQueueEndIndex(i);
+            endIndices[i] = header->Info[i].endDataIndex;
             if (startIndices[i] < QUEUE_NODE_START_INDEX)
                 continue;
 
@@ -586,8 +645,10 @@ namespace MemMoveQueue
             leftAlignIndex = newEndIndex;
             newRightmostIndex = newEndIndex;
 
-            SetQueueStartIndex(queueID, newStartIndex);
-            SetQueueEndIndex(queueID, newEndIndex);
+            //SetQueueStartIndex(queueID, newStartIndex);
+            header->Info[queueID].startDataIndex = newStartIndex;
+            //SetQueueEndIndex(queueID, newEndIndex);
+            header->Info[queueID].endDataIndex = newEndIndex;
 
             startIndices[queueID] = 0;
             endIndices[queueID] = 0;
@@ -598,7 +659,8 @@ namespace MemMoveQueue
         // Update data index position used for rightmost
         if (newRightmostIndex >= QUEUE_NODE_START_INDEX)
         {
-            SetRightMostNodeIndex(newRightmostIndex);
+            //SetRightMostNodeIndex(newRightmostIndex);
+            header->rightmostDataIndex = newRightmostIndex;
         }
 
         return true;
@@ -606,8 +668,11 @@ namespace MemMoveQueue
 
     void QueueManager::PrintQueueData(short int queueID)
     {
-        int startIndex = GetQueueStartIndex(queueID);
-        int endIndex = GetQueueEndIndex(queueID);
+        QueueHeader* header = GetQueueHeader();
+        //int startIndex = GetQueueStartIndex(queueID);
+        //int endIndex = GetQueueEndIndex(queueID);
+        int startIndex = header->Info[queueID].startDataIndex;
+        int endIndex = header->Info[queueID].endDataIndex;
 
         cout << "Queue_" << queueID << ":";
 
@@ -621,16 +686,20 @@ namespace MemMoveQueue
 
     void QueueManager::PrintAllQueueData()
     {
+        QueueHeader* header = GetQueueHeader();
+
         cout << "<<< All Queues " << endl;
         for (int i = 0; i < QUEUE_MAX; i++)
         {
-            int startIndex = GetQueueStartIndex(i);
+            //int startIndex = GetQueueStartIndex(i);
+            int startIndex = header->Info[i].startDataIndex;
             if (startIndex == 0)
                 continue;
 
             PrintQueueData(i);
         }
 
-        cout << "Total data count: " << GetTotalNodeCount() << " >>>" << endl << endl;
+        //cout << "Total data count: " << GetTotalNodeCount() << " >>>" << endl << endl;
+        cout << "Total data count: " << header->totalDataCount << " >>>" << endl << endl;
     }
 }
