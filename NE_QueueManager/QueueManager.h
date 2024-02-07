@@ -2,6 +2,29 @@
 
 #define BUFFER_SIZE 2048
 
+#pragma pack(push, 1)
+struct QueueInfo
+{
+    unsigned short startDataIndex;
+    unsigned short endDataIndex;
+};
+
+struct QueueHeader
+{
+    QueueInfo Info[20];
+    unsigned short rightmostDataIndex;
+    unsigned short totalDataCount;
+};
+
+struct QueueNode
+{
+    char data;
+    unsigned short prevIndex;
+    unsigned short nextIndex;
+};
+#pragma pack(pop)
+
+
 namespace DoubleLinkedListQueue
 {
     class QueueManager
@@ -24,6 +47,9 @@ namespace DoubleLinkedListQueue
     private:
         char buf[2048];
         char* pc;
+
+        inline QueueHeader* GetQueueHeader() { return reinterpret_cast<QueueHeader*>(&buf); }
+        inline QueueNode* GetQueueNode(unsigned short index) { return reinterpret_cast<QueueNode*>(&buf[index]); }
 
         // Inserts an unsigned short using 2 bytes starting from a specific index.
         inline void _setUI16ToCharArray(unsigned short index, unsigned short value)

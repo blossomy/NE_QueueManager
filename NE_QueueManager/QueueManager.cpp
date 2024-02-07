@@ -51,13 +51,22 @@ namespace DoubleLinkedListQueue
     QueueManager::QueueManager()
         : pc(buf)
     {
-        for (int i = 0; i < QUEUE_MAX; ++i) {
-            SetQueueStartIndex(i, 0); // If 0, it has not been created yet.
-            SetQueueEndIndex(i, 0);
+        //for (int i = 0; i < QUEUE_MAX; ++i) {
+        //    SetQueueStartIndex(i, 0); // If 0, it has not been created yet.
+        //    SetQueueEndIndex(i, 0);
+        //}
+
+        //SetRightMostNodeIndex(0);
+        //SetTotalNodeCount(0);
+        QueueHeader* header = reinterpret_cast<QueueHeader*>(pc);
+        for (int i = 0; i < QUEUE_MAX; ++i) 
+        {
+            header->Info[i].startDataIndex = 0;
+            header->Info[i].endDataIndex = 0;
         }
 
-        SetRightMostNodeIndex(0);
-        SetTotalNodeCount(0);
+        header->rightmostDataIndex = 0;
+        header->totalDataCount = 0;
     }
 
     QueueManager::~QueueManager()
@@ -66,15 +75,23 @@ namespace DoubleLinkedListQueue
 
     short int QueueManager::CreateQueue()
     {
+        QueueHeader* header = GetQueueHeader();
         for (short int i = 0; i < QUEUE_MAX; ++i)
         {
-            if (GetQueueStartIndex(i) == 0)
+            //if (GetQueueStartIndex(i) == 0)
+            //{
+            //    SetQueueStartIndex(i, 1); // If greater than 0, the queue is in use.
+            //    SetQueueEndIndex(i, 0);
+            //    return i;
+            //}
+            if (header->Info[i].startDataIndex == 0)
             {
-                SetQueueStartIndex(i, 1); // If greater than 0, the queue is in use.
-                SetQueueEndIndex(i, 0);
+                header->Info[i].startDataIndex = 1;
+                header->Info[i].endDataIndex = 0;
                 return i;
             }
         }
+
         OnError();
         return -1;
     }
@@ -88,13 +105,17 @@ namespace DoubleLinkedListQueue
         }
 
         // All nodes of the corresponding queue ID must be deleted.
-        while (GetQueueStartIndex(queueID) >= QUEUE_NODE_START_INDEX)
+        QueueHeader* header = GetQueueHeader();
+        while(header->Info[queueID].startDataIndex >= QUEUE_NODE_START_INDEX)
+        //while (GetQueueStartIndex(queueID) >= QUEUE_NODE_START_INDEX)
         {
             Dequeue(queueID);
         }
 
-        SetQueueStartIndex(queueID, 0); // Inactive
-        SetQueueEndIndex(queueID, 0);
+        //SetQueueStartIndex(queueID, 0); // Inactive
+        //SetQueueEndIndex(queueID, 0);
+        header->Info[queueID].startDataIndex = 0;
+        header->Info[queueID].endDataIndex = 0;
 
         return true;
     }
@@ -119,38 +140,50 @@ namespace DoubleLinkedListQueue
             return false;
         }
 
-        unsigned short endIndex = GetQueueEndIndex(queueID);
-        unsigned short index = GetRightMostNodeIndex();
+        //unsigned short endIndex = GetQueueEndIndex(queueID);
+        //unsigned short index = GetRightMostNodeIndex();
+        QueueHeader* header = GetQueueHeader();
+        unsigned short endIndex = header->Info[queueID].endDataIndex;
+        unsigned short index = header->rightmostDataIndex;
 
         index = index < QUEUE_NODE_START_INDEX ? QUEUE_NODE_START_INDEX : index + 5;
         bool firstElement = false;
-        if (GetQueueStartIndex(queueID) < QUEUE_NODE_START_INDEX)
+        //if (GetQueueStartIndex(queueID) < QUEUE_NODE_START_INDEX)
+        if (header->Info[queueID].startDataIndex < QUEUE_NODE_START_INDEX)
         {
             firstElement = true;
         }
 
-        buf[index] = value;
+        //QueueNode* node = reinterpret_cast<QueueNode*>(&buf[index]);
+        QueueNode* node = GetQueueNode(index);
+        
+        //buf[index] = value;
+        node->data = value;
 
-        SetNodePrevIndex(index, endIndex);
-        SetNodeNextIndex(index, 0);
+        //SetNodePrevIndex(index, endIndex);
+        //SetNodeNextIndex(index, 0);
+        node->prevIndex = endIndex;
+        node->nextIndex = 0;
 
         if (endIndex != 0)
         {
-            SetNodeNextIndex(endIndex, index);
+            //SetNodeNextIndex(endIndex, index);
+            GetQueueNode(endIndex)->nextIndex = index;
         }
 
         if (firstElement)
         {
-            SetQueueStartIndex(queueID, index); // first data index in queue
+            //SetQueueStartIndex(queueID, index); // first data index in queue
+            header->Info[queueID].startDataIndex = index;
         }
 
-        SetQueueEndIndex(queueID, index); // // last data index in queue
+        //SetQueueEndIndex(queueID, index); // // last data index in queue
+        header->Info[queueID].endDataIndex = index;
 
-        SetRightMostNodeIndex(index); // Entire queue last data position
-        SetTotalNodeCount(GetTotalNodeCount() + 1); // Increase in total data number
-
-
-        
+        //SetRightMostNodeIndex(index); // Entire queue last data position
+        //SetTotalNodeCount(GetTotalNodeCount() + 1); // Increase in total data number
+        header->rightmostDataIndex = index;
+        header->totalDataCount++;
 
         return true;
     }
@@ -169,64 +202,85 @@ namespace DoubleLinkedListQueue
             return -1;
         }
 
-        unsigned short index = GetQueueStartIndex(queueID);
-        char value = buf[index];
+        QueueHeader* header = GetQueueHeader();
+        //unsigned short index = GetQueueStartIndex(queueID);
+        unsigned short index = header->Info[queueID].startDataIndex;
+        //char value = buf[index];
+        QueueNode* node = GetQueueNode(index);
+        char value = node->data;
 
         // last node index
-        unsigned int rightmostIndex = GetRightMostNodeIndex();
+        //unsigned int rightmostIndex = GetRightMostNodeIndex();
+        unsigned int rightmostIndex = header->rightmostDataIndex;
         // prev node index of the last node
-        unsigned int prevIndex = GetNodePrevIndex(rightmostIndex);
+        //unsigned int prevIndex = GetNodePrevIndex(rightmostIndex);
+        unsigned int prevIndex = GetQueueNode(rightmostIndex)->prevIndex;
         // Update the prev of the next node of the last node
-        unsigned int nextIndex = GetNodeNextIndex(rightmostIndex);
+        //unsigned int nextIndex = GetNodeNextIndex(rightmostIndex);
+        unsigned int nextIndex = GetQueueNode(rightmostIndex)->nextIndex;
 
         if (nextIndex != 0)
         {
-            SetNodePrevIndex(nextIndex, index);
+            //SetNodePrevIndex(nextIndex, index);
+            GetQueueNode(nextIndex)->prevIndex = index;
         }
 
         if (prevIndex != 0 && prevIndex != index)
         {
             // Set next of the prev node to the dequeued index
-            SetNodeNextIndex(prevIndex, index);
+            //SetNodeNextIndex(prevIndex, index);
+            GetQueueNode(prevIndex)->nextIndex = index;
         }
 
-        unsigned int newIndex = GetNodeNextIndex(index);
+        //unsigned int newIndex = GetNodeNextIndex(index);
+        unsigned int newIndex = GetQueueNode(index)->nextIndex;
         if (newIndex == 0)
         {
-            SetQueueStartIndex(queueID, 1);
-            SetQueueEndIndex(queueID, newIndex);
+            //SetQueueStartIndex(queueID, 1);
+            header->Info[queueID].startDataIndex = 1;
+            //SetQueueEndIndex(queueID, newIndex);
+            header->Info[queueID].endDataIndex = newIndex;
         }
         else
         {
             if (newIndex != rightmostIndex)
             {
-                SetQueueStartIndex(queueID, newIndex);
+                //SetQueueStartIndex(queueID, newIndex);
+                header->Info[queueID].startDataIndex = newIndex;
             }
 
-            SetNodePrevIndex(newIndex, 0);
+            //SetNodePrevIndex(newIndex, 0);
+            GetQueueNode(newIndex)->prevIndex = 0;
         }
 
         // Copy the last node to the dequeued node
-        memmove(&buf[index], &buf[rightmostIndex], 5);
+        //memmove(&buf[index], &buf[rightmostIndex], 5);
+        memmove(&buf[index], &buf[rightmostIndex], sizeof(QueueNode));
         // clear last node
-        memset(&buf[rightmostIndex], 0, 5);
+        //memset(&buf[rightmostIndex], 0, 5);
+        memset(&buf[rightmostIndex], 0, sizeof(QueueNode));
 
         // Handle when the last node moved is the Start or End index of a certain queue
         for (int i = 0; i < QUEUE_MAX; i++)
         {
             bool updated = false;
 
-            if (GetQueueStartIndex(i) == 0)
+            //if (GetQueueStartIndex(i) == 0)
+            if (header->Info[i].startDataIndex == 0)
                 continue;
 
-            if (GetQueueStartIndex(i) == rightmostIndex)
+            //if (GetQueueStartIndex(i) == rightmostIndex)
+            if (header->Info[i].startDataIndex == rightmostIndex)
             {
-                SetQueueStartIndex(i, index);
+                //SetQueueStartIndex(i, index);
+                header->Info[i].startDataIndex = index;
                 updated = true;
             }
-            if (GetQueueEndIndex(i) == rightmostIndex)
+            //if (GetQueueEndIndex(i) == rightmostIndex)
+            if (header->Info[i].endDataIndex == rightmostIndex)
             {
-                SetQueueEndIndex(i, index);
+                //SetQueueEndIndex(i, index);
+                header->Info[i].endDataIndex = index;
                 updated = true;
             }
 
@@ -234,10 +288,13 @@ namespace DoubleLinkedListQueue
                 break;
         }
 
-        unsigned short leftShiftIndex = GetRightMostNodeIndex() - 5;
+        //unsigned short leftShiftIndex = GetRightMostNodeIndex() - 5;
+        unsigned short leftShiftIndex = header->rightmostDataIndex - sizeof(QueueNode);
         leftShiftIndex = leftShiftIndex < QUEUE_NODE_START_INDEX ? 0 : leftShiftIndex;
-        SetRightMostNodeIndex(leftShiftIndex); // All queue last data positions
-        SetTotalNodeCount(GetTotalNodeCount() - 1); // Decrease the total number of data
+        //SetRightMostNodeIndex(leftShiftIndex); // All queue last data positions
+        header->rightmostDataIndex = leftShiftIndex;
+        //SetTotalNodeCount(GetTotalNodeCount() - 1); // Decrease the total number of data
+        header->totalDataCount--;
 
         return value;
     }
@@ -249,14 +306,20 @@ namespace DoubleLinkedListQueue
 
     void QueueManager::PrintQueueData(short int queueID)
     {
-        int startIndex = GetQueueStartIndex(queueID);
+        //int startIndex = GetQueueStartIndex(queueID);
+        QueueHeader* header = GetQueueHeader();
+        int startIndex = header->Info[queueID].startDataIndex;
 
         cout << "Queue_" << queueID << ":";
 
+        QueueNode* node;
         while (startIndex >= QUEUE_NODE_START_INDEX)
         {
-            cout << buf[startIndex] << ",";
-            startIndex = GetNodeNextIndex(startIndex);
+            node = GetQueueNode(startIndex);
+            //cout << buf[startIndex] << ",";
+            cout << node->data << ",";
+            //startIndex = GetNodeNextIndex(startIndex);
+            startIndex = node->nextIndex;
         }
 
         cout << endl;
@@ -265,9 +328,11 @@ namespace DoubleLinkedListQueue
     void QueueManager::PrintAllQueueData()
     {
         cout << "<<< All Queues " << endl;
+        QueueHeader* header = GetQueueHeader();
         for (int i = 0; i < QUEUE_MAX; i++)
         {
-            int startIndex = GetQueueStartIndex(i);
+            //int startIndex = GetQueueStartIndex(i);
+            int startIndex = header->Info[i].startDataIndex;
             if (startIndex == 0)
                 continue;
 
